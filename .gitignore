@@ -1,7 +1,9 @@
 /service-a/target/
 /service-b/target/
+/service-bff/target/
 /service-a/bin/
 /service-b/bin/
+/service-bff/bin/
 .project
 .classpath
 .settings/

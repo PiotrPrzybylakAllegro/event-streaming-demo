@@ -12,6 +12,7 @@
     <modules>
         <module>service-a</module>
         <module>service-b</module>
+        <module>service-bff</module>
     </modules>
 
     <properties>

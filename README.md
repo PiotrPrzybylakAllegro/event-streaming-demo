@@ -17,6 +17,7 @@ In separate terminals from the project root:
 ```bash
 ./mvnw -pl service-a spring-boot:run
 ./mvnw -pl service-b spring-boot:run
+./mvnw -pl service-bff spring-boot:run
 ```
 
 ## Send a message
@@ -26,3 +27,11 @@ curl -X POST http://localhost:8081/messages \
   -d '{"id":"1","content":"hello from service A"}'
 ```
 Service B logs the consumed message on port 8082.
+
+## Create a campaign via BFF
+```bash
+curl -X POST http://localhost:8080/campaigns \
+  -H "Content-Type: application/json" \
+  -d '{"id":"c1","name":"spring launch","budget":1000}'
+```
+Service A consumes the campaign command from Kafka topic `campaign-commands`.

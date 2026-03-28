@@ -1,0 +1,11 @@
+server:
+  port: 8080
+
+app:
+  kafka:
+    bootstrap-servers: localhost:29092
+    topic: campaign-commands
+
+spring:
+  application:
+    name: service-bff
