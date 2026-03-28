@@ -15,8 +15,8 @@ docker-compose up -d
 ## Run services
 In separate terminals from the project root:
 ```bash
-mvn -pl service-a spring-boot:run
-mvn -pl service-b spring-boot:run
+./mvnw -pl service-a spring-boot:run
+./mvnw -pl service-b spring-boot:run
 ```
 
 ## Send a message

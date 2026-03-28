@@ -1,2 +1,8 @@
 /service-a/target/
 /service-b/target/
+.project
+.classpath
+.settings/
+.idea/
+/service-a/.project
+/service-b/.project
