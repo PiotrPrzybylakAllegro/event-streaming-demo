@@ -1,0 +1,11 @@
+server:
+  port: 8081
+
+app:
+  kafka:
+    bootstrap-servers: localhost:29092
+    topic: demo-messages
+
+spring:
+  application:
+    name: service-a
