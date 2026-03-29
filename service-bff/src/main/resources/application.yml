@@ -5,6 +5,7 @@ app:
   kafka:
     bootstrap-servers: localhost:29092
     topic: campaign-commands
+    event-topic: campaign-events
 
 spring:
   application:

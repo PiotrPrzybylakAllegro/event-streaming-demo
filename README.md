@@ -36,6 +36,7 @@ curl -X POST http://localhost:8080/campaigns \
 ```
 Service A consumes the campaign command from Kafka topic `campaign-commands`.
 Service A validates it and emits a `campaign-events` record with APPROVED/REJECTED and reason.
+Service BFF consumes `campaign-events` into an in-memory read model and serves `GET /campaigns`.
 
 
 podman run -d --name kafbat -p 8085:8080 \
