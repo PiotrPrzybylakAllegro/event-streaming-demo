@@ -10,5 +10,7 @@ app:
     adgroup-event-topic: adgroup-events
 
 spring:
+  kafka:
+    bootstrap-servers: ${app.kafka.bootstrap-servers}
   application:
     name: service-bff

@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.common.TopicPartition;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
@@ -49,6 +51,7 @@ public class KafkaConsumerConfig {
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+        factory.getContainerProperties().setConsumerRebalanceListener(new SeekToBeginningRebalanceListener());
         return factory;
     }
 
@@ -75,6 +78,14 @@ public class KafkaConsumerConfig {
     public ConcurrentKafkaListenerContainerFactory<String, Object> adGroupListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(adGroupConsumerFactory());
+        factory.getContainerProperties().setConsumerRebalanceListener(new SeekToBeginningRebalanceListener());
         return factory;
+    }
+
+    private static class SeekToBeginningRebalanceListener implements org.springframework.kafka.listener.ConsumerAwareRebalanceListener {
+        @Override
+        public void onPartitionsAssigned(Consumer<?, ?> consumer, java.util.Collection<TopicPartition> partitions) {
+            consumer.seekToBeginning(partitions);
+        }
     }
 }
