@@ -16,7 +16,7 @@ public class MessageController {
     private final String topic;
 
     public MessageController(KafkaTemplate<String, Object> kafkaTemplate,
-                             @Value("${app.kafka.topic}") String topic) {
+                             @Value("${app.kafka.messages-topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
     }

@@ -2,6 +2,8 @@ package com.example.servicea.service;
 
 import com.example.servicea.model.CampaignEvent;
 import com.example.servicea.model.CreateCampaignCommand;
+import com.example.servicea.model.Envelope;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,18 +18,25 @@ public class CampaignCommandListener {
     private static final Logger log = LoggerFactory.getLogger(CampaignCommandListener.class);
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final String eventTopic;
+    private final String topic;
+    private final ObjectMapper objectMapper;
 
     public CampaignCommandListener(KafkaTemplate<String, Object> kafkaTemplate,
-                                   @Value("${app.kafka.campaign-event-topic}") String eventTopic) {
+                                   ObjectMapper objectMapper,
+                                   @Value("${app.kafka.messages-topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
-        this.eventTopic = eventTopic;
+        this.objectMapper = objectMapper;
+        this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.campaign-topic}", containerFactory = "campaignListenerContainerFactory")
-    public void consume(CreateCampaignCommand command) {
+    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "service-a-campaign-commands")
+    public void consume(Envelope envelope) {
+        if (!Envelope.CAMPAIGN_COMMAND.equals(envelope.type())) {
+            return;
+        }
+        CreateCampaignCommand command = objectMapper.convertValue(envelope.payload(), CreateCampaignCommand.class);
         CampaignEvent event = validateAndBuildEvent(command);
-        kafkaTemplate.send(eventTopic, event.id(), event);
+        kafkaTemplate.send(topic, event.id(), Envelope.campaignEvent(event));
         log.info("Emitted campaign event: id={}, status={}, reason={}", event.id(), event.status(), event.reason());
     }
 

@@ -34,9 +34,9 @@ curl -X POST http://localhost:8080/campaigns \
   -H "Content-Type: application/json" \
   -d '{"id":"c1","name":"spring launch","budget":1000}'
 ```
-Service A consumes the campaign command from Kafka topic `campaign-commands`.
-Service A validates it and emits a `campaign-events` record with APPROVED/REJECTED and reason.
-Service BFF consumes `campaign-events` into an in-memory read model and serves `GET /campaigns`.
+BFF publishes a `CommandEnvelope` with type `campaign-command` to `ad-manager-events`.
+Service A consumes, validates, and emits an `EventEnvelope` with type `campaign-event` back to `ad-manager-events`.
+BFF consumes `EventEnvelope` records to build its read model and serves `GET /campaigns`.
 
 ## Add an ad group via BFF
 ```bash
@@ -44,11 +44,11 @@ curl -X POST http://localhost:8080/campaigns/c1/adgroups \
   -H "Content-Type: application/json" \
   -d '{"id":"g1","campaignId":"c1","name":"adgroup","budget":200,"startDate":"2026-04-01","endDate":"2026-04-30"}'
 ```
-Flow:
-- BFF publishes to `adgroup-commands` (no local validation beyond path enrichment).
-- Service A consumes, checks campaign existence from `campaign-events` state, validates fields, and emits `adgroup-events` with APPROVED/REJECTED plus reason.
-- BFF consumes `adgroup-events` into its read model and serves them via `GET /campaigns` (adGroups array). On restart it seeks to beginning (stable consumer groups) to rebuild in-memory state.
-- Kafka topics are created with infinite retention (`retention.ms=-1`) via docker-compose init.
+Flow on the single topic `ad-manager-events`:
+- BFF publishes a `CommandEnvelope` with type `adgroup-command` (payload includes the path campaignId).
+- Service A consumes, checks campaign existence from in-memory state built from `campaign-event` envelopes, validates fields, and emits an `EventEnvelope` with type `adgroup-event` (APPROVED/REJECTED + reason).
+- BFF consumes `adgroup-event` envelopes to populate ad groups under each campaign. Consumers seek to beginning on assignment to rebuild state after restarts.
+- Docker-compose initializes only `ad-manager-events` with `retention.ms=-1` (infinite retention).
 
 
 podman run -d --name kafbat -p 8085:8080 \

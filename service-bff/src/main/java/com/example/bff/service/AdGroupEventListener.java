@@ -1,6 +1,8 @@
 package com.example.bff.service;
 
 import com.example.bff.model.AdGroupEvent;
+import com.example.bff.model.Envelope;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,13 +18,19 @@ public class AdGroupEventListener {
 
     private final Map<String, AdGroupEvent> state = new ConcurrentHashMap<>();
     private final CampaignReadModel readModel;
+    private final ObjectMapper objectMapper;
 
-    public AdGroupEventListener(CampaignReadModel readModel) {
+    public AdGroupEventListener(CampaignReadModel readModel, ObjectMapper objectMapper) {
         this.readModel = readModel;
+        this.objectMapper = objectMapper;
     }
 
-    @KafkaListener(topics = "${app.kafka.adgroup-event-topic}", containerFactory = "adGroupListenerContainerFactory")
-    public void consume(AdGroupEvent event) {
+    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "service-bff-adgroup-events")
+    public void consume(Envelope envelope) {
+        if (!Envelope.ADGROUP_EVENT.equals(envelope.type())) {
+            return;
+        }
+        AdGroupEvent event = objectMapper.convertValue(envelope.payload(), AdGroupEvent.class);
         if (event == null || event.id() == null) {
             return;
         }

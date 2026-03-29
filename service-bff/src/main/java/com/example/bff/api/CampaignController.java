@@ -1,6 +1,6 @@
 package com.example.bff.api;
 
-import com.example.bff.model.CampaignEvent;
+import com.example.bff.model.Envelope;
 import com.example.bff.model.CreateCampaignCommand;
 import com.example.bff.model.CreateAdGroupCommand;
 import com.example.bff.service.CampaignReadModel;
@@ -22,22 +22,19 @@ public class CampaignController {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final String topic;
-    private final String adGroupTopic;
     private final CampaignReadModel readModel;
 
     public CampaignController(KafkaTemplate<String, Object> kafkaTemplate,
                               CampaignReadModel readModel,
-                              @Value("${app.kafka.topic}") String topic,
-                              @Value("${app.kafka.adgroup-topic}") String adGroupTopic) {
+                              @Value("${app.kafka.messages-topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.topic = topic;
-        this.adGroupTopic = adGroupTopic;
         this.readModel = readModel;
     }
 
     @PostMapping
     public void createCampaign(@RequestBody CreateCampaignCommand command) {
-        kafkaTemplate.send(topic, command.id(), command);
+        kafkaTemplate.send(topic, command.id(), Envelope.campaignCommand(command));
     }
 
     @GetMapping
@@ -56,6 +53,6 @@ public class CampaignController {
                 command.startDate(),
                 command.endDate()
         );
-        kafkaTemplate.send(adGroupTopic, enriched.id(), enriched);
+        kafkaTemplate.send(topic, enriched.id(), Envelope.adGroupCommand(enriched));
     }
 }

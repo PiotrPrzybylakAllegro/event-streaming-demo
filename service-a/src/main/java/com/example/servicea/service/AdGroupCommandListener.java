@@ -2,6 +2,8 @@ package com.example.servicea.service;
 
 import com.example.servicea.model.AdGroupEvent;
 import com.example.servicea.model.CreateAdGroupCommand;
+import com.example.servicea.model.Envelope;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,20 +19,27 @@ public class AdGroupCommandListener {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final CampaignState campaignState;
-    private final String eventTopic;
+    private final String topic;
+    private final ObjectMapper objectMapper;
 
     public AdGroupCommandListener(KafkaTemplate<String, Object> kafkaTemplate,
                                   CampaignState campaignState,
-                                  @Value("${app.kafka.adgroup-event-topic}") String eventTopic) {
+                                  ObjectMapper objectMapper,
+                                  @Value("${app.kafka.messages-topic}") String topic) {
         this.kafkaTemplate = kafkaTemplate;
         this.campaignState = campaignState;
-        this.eventTopic = eventTopic;
+        this.objectMapper = objectMapper;
+        this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.adgroup-topic}", containerFactory = "adGroupListenerContainerFactory")
-    public void consume(CreateAdGroupCommand command) {
+    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "service-a-adgroup-commands")
+    public void consume(Envelope envelope) {
+        if (!Envelope.ADGROUP_COMMAND.equals(envelope.type())) {
+            return;
+        }
+        CreateAdGroupCommand command = objectMapper.convertValue(envelope.payload(), CreateAdGroupCommand.class);
         AdGroupEvent event = validateAndBuildEvent(command);
-        kafkaTemplate.send(eventTopic, event.id(), event);
+        kafkaTemplate.send(topic, event.id(), Envelope.adGroupEvent(event));
         log.info("Emitted adgroup event: id={}, status={}, reason={}", event.id(), event.status(), event.reason());
     }
 
