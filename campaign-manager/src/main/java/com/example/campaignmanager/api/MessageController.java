@@ -1,6 +1,6 @@
-package com.example.servicea.api;
+package com.example.campaignmanager.api;
 
-import com.example.servicea.model.MessagePayload;
+import com.example.campaignmanager.model.MessagePayload;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.PostMapping;

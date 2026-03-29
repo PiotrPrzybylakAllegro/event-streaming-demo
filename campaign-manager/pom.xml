@@ -10,8 +10,8 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>service-a</artifactId>
-    <name>service-a</name>
+    <artifactId>campaign-manager</artifactId>
+    <name>campaign-manager</name>
 
     <dependencies>
         <dependency>

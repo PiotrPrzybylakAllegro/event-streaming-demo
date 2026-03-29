@@ -1,6 +1,6 @@
-package com.example.servicea.service;
+package com.example.campaignmanager.service;
 
-import com.example.servicea.model.CampaignEvent;
+import com.example.campaignmanager.model.CampaignEvent;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;

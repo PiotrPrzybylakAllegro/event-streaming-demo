@@ -29,7 +29,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, MessagePayload.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.servicea.model,com.example.serviceb.model");
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.campaignmanager.model,com.example.serviceb.model");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-b-group");
         return props;

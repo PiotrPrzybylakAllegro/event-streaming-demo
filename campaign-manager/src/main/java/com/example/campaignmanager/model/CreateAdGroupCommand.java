@@ -1,4 +1,4 @@
-package com.example.servicea.model;
+package com.example.campaignmanager.model;
 
 import java.time.LocalDate;
 

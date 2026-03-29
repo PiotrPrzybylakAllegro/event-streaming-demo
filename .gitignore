@@ -1,12 +1,12 @@
-/service-a/target/
+/campaign-manager/target/
 /service-b/target/
 /service-bff/target/
-/service-a/bin/
+/campaign-manager/bin/
 /service-b/bin/
 /service-bff/bin/
 .project
 .classpath
 .settings/
 .idea/
-/service-a/.project
+/campaign-manager/.project
 /service-b/.project

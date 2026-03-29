@@ -15,7 +15,7 @@ docker-compose up -d
 ## Run services
 In separate terminals from the project root:
 ```bash
-./mvnw -pl service-a spring-boot:run
+./mvnw -pl campaign-manager spring-boot:run
 ./mvnw -pl service-b spring-boot:run
 ./mvnw -pl service-bff spring-boot:run
 ```
@@ -24,7 +24,7 @@ In separate terminals from the project root:
 ```bash
 curl -X POST http://localhost:8081/messages \
   -H "Content-Type: application/json" \
-  -d '{"id":"1","content":"hello from service A"}'
+  -d '{"id":"1","content":"hello from campaign manager"}'
 ```
 Service B logs the consumed message on port 8082.
 
@@ -35,7 +35,7 @@ curl -X POST http://localhost:8080/campaigns \
   -d '{"id":"c1","name":"spring launch","budget":1000}'
 ```
 BFF publishes a `CommandEnvelope` with type `campaign-command` to `ad-manager-events`.
-Service A consumes, validates, and emits an `EventEnvelope` with type `campaign-event` back to `ad-manager-events`.
+Campaign Manager consumes, validates, and emits an `EventEnvelope` with type `campaign-event` back to `ad-manager-events`.
 BFF consumes `EventEnvelope` records to build its read model and serves `GET /campaigns`.
 
 ## Add an ad group via BFF
@@ -46,7 +46,7 @@ curl -X POST http://localhost:8080/campaigns/c1/adgroups \
 ```
 Flow on the single topic `ad-manager-events`:
 - BFF publishes a `CommandEnvelope` with type `adgroup-command` (payload includes the path campaignId).
-- Service A consumes, checks campaign existence from in-memory state built from `campaign-event` envelopes, validates fields, and emits an `EventEnvelope` with type `adgroup-event` (APPROVED/REJECTED + reason).
+- Campaign Manager consumes, checks campaign existence from in-memory state built from `campaign-event` envelopes, validates fields, and emits an `EventEnvelope` with type `adgroup-event` (APPROVED/REJECTED + reason).
 - BFF consumes `adgroup-event` envelopes to populate ad groups under each campaign. Consumers seek to beginning on assignment to rebuild state after restarts.
 - Docker-compose initializes only `ad-manager-events` with `retention.ms=-1` (infinite retention).
 

@@ -1,8 +1,8 @@
-package com.example.servicea.service;
+package com.example.campaignmanager.service;
 
-import com.example.servicea.model.CampaignEvent;
-import com.example.servicea.model.CreateCampaignCommand;
-import com.example.servicea.model.Envelope;
+import com.example.campaignmanager.model.CampaignEvent;
+import com.example.campaignmanager.model.CreateCampaignCommand;
+import com.example.campaignmanager.model.Envelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +29,7 @@ public class CampaignCommandListener {
         this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "service-a-campaign-commands")
+    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "campaign-manager-campaign-commands")
     public void consume(Envelope envelope) {
         if (!Envelope.CAMPAIGN_COMMAND.equals(envelope.type())) {
             return;

@@ -8,4 +8,4 @@ app:
 
 spring:
   application:
-    name: service-a
+    name: campaign-manager

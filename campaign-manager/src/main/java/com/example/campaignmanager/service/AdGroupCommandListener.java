@@ -1,8 +1,8 @@
-package com.example.servicea.service;
+package com.example.campaignmanager.service;
 
-import com.example.servicea.model.AdGroupEvent;
-import com.example.servicea.model.CreateAdGroupCommand;
-import com.example.servicea.model.Envelope;
+import com.example.campaignmanager.model.AdGroupEvent;
+import com.example.campaignmanager.model.CreateAdGroupCommand;
+import com.example.campaignmanager.model.Envelope;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +32,7 @@ public class AdGroupCommandListener {
         this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "service-a-adgroup-commands")
+    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "campaign-manager-adgroup-commands")
     public void consume(Envelope envelope) {
         if (!Envelope.ADGROUP_COMMAND.equals(envelope.type())) {
             return;

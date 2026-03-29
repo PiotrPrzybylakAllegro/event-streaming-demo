@@ -10,7 +10,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>service-a</module>
+        <module>campaign-manager</module>
         <module>service-b</module>
         <module>service-bff</module>
     </modules>

@@ -1,4 +1,4 @@
-package com.example.servicea.config;
+package com.example.campaignmanager.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;

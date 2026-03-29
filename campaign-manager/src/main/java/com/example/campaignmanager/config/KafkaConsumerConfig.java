@@ -1,6 +1,6 @@
-package com.example.servicea.config;
+package com.example.campaignmanager.config;
 
-import com.example.servicea.model.Envelope;
+import com.example.campaignmanager.model.Envelope;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
