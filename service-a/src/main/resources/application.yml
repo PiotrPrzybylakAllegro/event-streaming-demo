@@ -6,6 +6,7 @@ app:
     bootstrap-servers: localhost:29092
     topic: demo-messages
     campaign-topic: campaign-commands
+    campaign-event-topic: campaign-events
 
 spring:
   application:

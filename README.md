@@ -35,3 +35,10 @@ curl -X POST http://localhost:8080/campaigns \
   -d '{"id":"c1","name":"spring launch","budget":1000}'
 ```
 Service A consumes the campaign command from Kafka topic `campaign-commands`.
+Service A validates it and emits a `campaign-events` record with APPROVED/REJECTED and reason.
+
+
+podman run -d --name kafbat -p 8085:8080 \
+-e KAFKA_CLUSTERS_0_NAME=local \
+-e KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=host.containers.internal:29092 \
+provectuslabs/kafka-ui:latest
