@@ -53,6 +53,6 @@ public class CampaignController {
                 command.startDate(),
                 command.endDate()
         );
-        kafkaTemplate.send(topic, enriched.id(), Envelope.adGroupCommand(enriched));
+        kafkaTemplate.send(topic, campaignId, Envelope.adGroupCommand(enriched));
     }
 }

@@ -143,7 +143,7 @@ public class EnvelopeListener {
     private void handleAdGroupCommand(Envelope envelope) {
         CreateAdGroupCommand command = objectMapper.convertValue(envelope.payload(), CreateAdGroupCommand.class);
         AdGroupEvent event = validateAdGroupCommand(command);
-        kafkaTemplate.send(topic, event.id(), Envelope.adGroupEvent(event));
+        kafkaTemplate.send(topic, command.campaignId(), Envelope.adGroupEvent(event));
         log.info("Emitted adgroup event: id={}, status={}, reason={}", event.id(), event.status(), event.reason());
     }
 
