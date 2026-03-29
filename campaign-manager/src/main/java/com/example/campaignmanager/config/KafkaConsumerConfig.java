@@ -29,11 +29,8 @@ public class KafkaConsumerConfig {
         this.stateRebuildRebalanceListener = stateRebuildRebalanceListener;
     }
 
-    /* ------------------------------------------------------------------ */
-    /*  Shared consumer props                                              */
-    /* ------------------------------------------------------------------ */
-
-    private Map<String, Object> baseProps() {
+    @Bean
+    public ConsumerFactory<String, Envelope> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -42,53 +39,17 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return props;
+        return new DefaultKafkaConsumerFactory<>(props);
     }
-
-    /* ------------------------------------------------------------------ */
-    /*  State-rebuild factory – seeks to 0, records end offsets             */
-    /* ------------------------------------------------------------------ */
-
-    @Bean
-    public ConsumerFactory<String, Envelope> stateRebuildConsumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(baseProps());
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Envelope> stateRebuildListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(stateRebuildConsumerFactory());
-        factory.getContainerProperties().setConsumerRebalanceListener(stateRebuildRebalanceListener);
-        // Enable idle event so CampaignEventListener can detect the empty-topic edge case
-        factory.getContainerProperties().setIdleEventInterval(5000L);
-        return factory;
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Command factory – normal offsets, auto-start disabled               */
-    /* ------------------------------------------------------------------ */
-
-    @Bean
-    public ConsumerFactory<String, Envelope> commandConsumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(baseProps());
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Envelope> commandListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(commandConsumerFactory());
-        factory.setAutoStartup(false);
-        return factory;
-    }
-
-    /* ------------------------------------------------------------------ */
-    /*  Default factory (for any listener without explicit factory ref)     */
-    /* ------------------------------------------------------------------ */
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Envelope> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(stateRebuildConsumerFactory());
+        factory.setConsumerFactory(consumerFactory());
+        // Seek to beginning on assignment so the full log is replayed for state rebuild
+        factory.getContainerProperties().setConsumerRebalanceListener(stateRebuildRebalanceListener);
+        // Enable idle event so the listener can detect the empty-topic edge case
+        factory.getContainerProperties().setIdleEventInterval(5000L);
         return factory;
     }
 }
