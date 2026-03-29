@@ -29,4 +29,4 @@ services:
     depends_on:
       - kafka
     command: ["/bin/bash", "-c", "sleep 10 \
-      && kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ad-manager-events --replication-factor 1 --partitions 1 --config retention.ms=-1"]
+      && kafka-topics --bootstrap-server kafka:9092 --create --if-not-exists --topic ad-manager-events --replication-factor 1 --partitions 10 --config retention.ms=-1"]
