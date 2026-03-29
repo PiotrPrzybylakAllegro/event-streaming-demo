@@ -32,7 +32,12 @@ public class AdGroupCommandListener {
         this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "campaign-manager-adgroup-commands")
+    @KafkaListener(
+            id = "adGroupCommandListener",
+            topics = "${app.kafka.messages-topic}",
+            groupId = "campaign-manager-adgroup-commands",
+            containerFactory = "commandListenerContainerFactory"
+    )
     public void consume(Envelope envelope) {
         if (!Envelope.ADGROUP_COMMAND.equals(envelope.type())) {
             return;

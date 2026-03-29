@@ -29,7 +29,12 @@ public class CampaignCommandListener {
         this.topic = topic;
     }
 
-    @KafkaListener(topics = "${app.kafka.messages-topic}", groupId = "campaign-manager-campaign-commands")
+    @KafkaListener(
+            id = "campaignCommandListener",
+            topics = "${app.kafka.messages-topic}",
+            groupId = "campaign-manager-campaign-commands",
+            containerFactory = "commandListenerContainerFactory"
+    )
     public void consume(Envelope envelope) {
         if (!Envelope.CAMPAIGN_COMMAND.equals(envelope.type())) {
             return;

@@ -1,9 +1,8 @@
 package com.example.campaignmanager.config;
 
 import com.example.campaignmanager.model.Envelope;
-import org.apache.kafka.clients.consumer.Consumer;
+import com.example.campaignmanager.service.StateRebuildRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -12,10 +11,8 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ConsumerAwareRebalanceListener;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,8 +23,17 @@ public class KafkaConsumerConfig {
     @Value("${app.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    @Bean
-    public ConsumerFactory<String, Envelope> consumerFactory() {
+    private final StateRebuildRebalanceListener stateRebuildRebalanceListener;
+
+    public KafkaConsumerConfig(StateRebuildRebalanceListener stateRebuildRebalanceListener) {
+        this.stateRebuildRebalanceListener = stateRebuildRebalanceListener;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Shared consumer props                                              */
+    /* ------------------------------------------------------------------ */
+
+    private Map<String, Object> baseProps() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -36,21 +42,53 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new DefaultKafkaConsumerFactory<>(props);
+        return props;
     }
+
+    /* ------------------------------------------------------------------ */
+    /*  State-rebuild factory – seeks to 0, records end offsets             */
+    /* ------------------------------------------------------------------ */
+
+    @Bean
+    public ConsumerFactory<String, Envelope> stateRebuildConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(baseProps());
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Envelope> stateRebuildListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(stateRebuildConsumerFactory());
+        factory.getContainerProperties().setConsumerRebalanceListener(stateRebuildRebalanceListener);
+        // Enable idle event so CampaignEventListener can detect the empty-topic edge case
+        factory.getContainerProperties().setIdleEventInterval(5000L);
+        return factory;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Command factory – normal offsets, auto-start disabled               */
+    /* ------------------------------------------------------------------ */
+
+    @Bean
+    public ConsumerFactory<String, Envelope> commandConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(baseProps());
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Envelope> commandListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(commandConsumerFactory());
+        factory.setAutoStartup(false);
+        return factory;
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Default factory (for any listener without explicit factory ref)     */
+    /* ------------------------------------------------------------------ */
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Envelope> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Envelope> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        factory.getContainerProperties().setConsumerRebalanceListener(new SeekToBeginningRebalanceListener());
+        factory.setConsumerFactory(stateRebuildConsumerFactory());
         return factory;
-    }
-
-    private static class SeekToBeginningRebalanceListener implements ConsumerAwareRebalanceListener {
-        @Override
-        public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
-            consumer.seekToBeginning(partitions);
-        }
     }
 }
