@@ -45,6 +45,7 @@ curl -X POST http://localhost:8080/campaigns/c1/adgroups \
   -d '{"id":"g1","campaignId":"c1","name":"adgroup","budget":200,"startDate":"2026-04-01","endDate":"2026-04-30"}'
 ```
 Command is sent to `adgroup-commands` only if the campaign exists in the read model.
+Note: Path variables now require the project to be built with `-parameters` (configured in parent pom).
 
 
 podman run -d --name kafbat -p 8085:8080 \
