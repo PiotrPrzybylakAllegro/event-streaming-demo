@@ -16,7 +16,7 @@ public class AdGroupEventListener {
 
     private final Map<String, AdGroupEvent> state = new ConcurrentHashMap<>();
 
-    @KafkaListener(topics = "${app.kafka.adgroup-event-topic}")
+    @KafkaListener(topics = "${app.kafka.adgroup-event-topic}", containerFactory = "adGroupListenerContainerFactory")
     public void consume(AdGroupEvent event) {
         if (event == null || event.id() == null) {
             return;
