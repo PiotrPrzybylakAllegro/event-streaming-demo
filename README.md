@@ -47,7 +47,7 @@ curl -X POST http://localhost:8080/campaigns/c1/adgroups \
 Flow:
 - BFF publishes to `adgroup-commands` (no local validation beyond path enrichment).
 - Service A consumes, checks campaign existence from `campaign-events` state, validates fields, and emits `adgroup-events` with APPROVED/REJECTED plus reason.
-- BFF also consumes `adgroup-events` (in-memory) and exposes `GET /adgroups` for inspection.
+- BFF consumes `adgroup-events` into its read model and serves them via `GET /campaigns` (adGroups array). Consumers start from earliest offsets on restart.
 
 
 podman run -d --name kafbat -p 8085:8080 \
