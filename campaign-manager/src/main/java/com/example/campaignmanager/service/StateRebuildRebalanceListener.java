@@ -25,19 +25,34 @@ public class StateRebuildRebalanceListener implements ConsumerAwareRebalanceList
     /** End offsets at assignment time — the target for catch-up. */
     private final Map<TopicPartition, Long> endOffsets = new ConcurrentHashMap<>();
 
+    /** Committed offsets at assignment time — commands before this were already processed. */
+    private final Map<TopicPartition, Long> committedOffsets = new ConcurrentHashMap<>();
+
     @Override
     public void onPartitionsAssigned(Consumer<?, ?> consumer, Collection<TopicPartition> partitions) {
+        // Record committed offsets BEFORE seeking to beginning.
+        // Commands at offset < committed were already processed (events exist on topic).
+        // Commands at offset >= committed are new (need event publication).
+        committedOffsets.clear();
+        for (TopicPartition tp : partitions) {
+            var committed = consumer.committed(Set.of(tp));
+            var offsetAndMetadata = committed.get(tp);
+            committedOffsets.put(tp, offsetAndMetadata != null ? offsetAndMetadata.offset() : 0L);
+        }
+
         consumer.seekToBeginning(partitions);
 
         Map<TopicPartition, Long> ends = consumer.endOffsets(partitions);
         endOffsets.clear();
         endOffsets.putAll(ends);
-        log.info("State-rebuild: assigned {} partitions, end offsets = {}", partitions.size(), ends);
+        log.info("State-rebuild: assigned {} partitions, committed offsets = {}, end offsets = {}",
+                partitions.size(), committedOffsets, ends);
     }
 
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
         partitions.forEach(endOffsets::remove);
+        partitions.forEach(committedOffsets::remove);
     }
 
     /**
@@ -45,6 +60,15 @@ public class StateRebuildRebalanceListener implements ConsumerAwareRebalanceList
      */
     public long endOffsetFor(TopicPartition tp) {
         return endOffsets.getOrDefault(tp, -1L);
+    }
+
+    /**
+     * Returns the committed offset for a given partition at assignment time.
+     * Commands at offsets &lt; this value were already processed; commands at
+     * offsets &gt;= this value are new and need event publication.
+     */
+    public long committedOffsetFor(TopicPartition tp) {
+        return committedOffsets.getOrDefault(tp, 0L);
     }
 
     /**

@@ -30,9 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * <h3>Replay gate</h3>
  * On startup the consumer seeks to offset 0 (via
  * {@link StateRebuildRebalanceListener}) and replays the entire log.
- * During replay, commands are re-validated to rebuild {@link CampaignState}
- * but the resulting events are <em>not</em> published (they already exist
- * on the topic from the original processing).  Events are skipped entirely.
+ * During replay, commands are re-validated to rebuild {@link CampaignState}.
+ * Commands at offsets before the committed offset (already processed in a
+ * previous lifecycle) only rebuild state — their events already exist on
+ * the topic.  Commands at offsets &gt;= the committed offset (new, arrived
+ * while down) rebuild state AND publish events.  Events are skipped entirely.
  * Once caught up, the {@link ReplayGate} opens and new commands are
  * processed normally (with event publication).
  */
@@ -78,8 +80,12 @@ public class EnvelopeListener {
         Envelope envelope = record.value();
 
         if (!replayGate.isReady()) {
-            // Replay phase: re-process commands to rebuild state, skip events
-            replayCommand(envelope);
+            // Replay phase: re-process commands to rebuild state.
+            // Commands at offset >= committed offset are new (arrived while down)
+            // and need event publication.
+            TopicPartition tp = new TopicPartition(record.topic(), record.partition());
+            boolean isNew = record.offset() >= rebalanceListener.committedOffsetFor(tp);
+            replayCommand(envelope, isNew);
             checkCaughtUp(record);
             return;
         }
@@ -109,20 +115,32 @@ public class EnvelopeListener {
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Replay: rebuild state from commands without publishing events        */
+    /*  Replay: rebuild state from commands, publish events for new ones     */
     /* ------------------------------------------------------------------ */
 
-    private void replayCommand(Envelope envelope) {
+    private void replayCommand(Envelope envelope, boolean isNew) {
         switch (envelope.type()) {
             case Envelope.CAMPAIGN_COMMAND -> {
                 CreateCampaignCommand cmd = objectMapper.convertValue(envelope.payload(), CreateCampaignCommand.class);
                 CampaignEvent event = validateCampaignCommand(cmd);
                 campaignState.upsert(event);
-                log.debug("Replay: rebuilt campaign state from command: id={}, status={}", event.id(), event.status());
+                if (isNew) {
+                    kafkaTemplate.send(topic, event.id(), Envelope.campaignEvent(event));
+                    log.info("Replay (new): emitted campaign event: id={}, status={}", event.id(), event.status());
+                } else {
+                    log.debug("Replay: rebuilt campaign state from command: id={}, status={}", event.id(), event.status());
+                }
             }
             case Envelope.ADGROUP_COMMAND -> {
-                // Ad group commands don't affect CampaignState, nothing to rebuild
-                log.debug("Replay: skipped adgroup command (no state to rebuild)");
+                if (isNew) {
+                    // New ad group command — process fully (validate + publish)
+                    CreateAdGroupCommand cmd = objectMapper.convertValue(envelope.payload(), CreateAdGroupCommand.class);
+                    AdGroupEvent event = validateAdGroupCommand(cmd);
+                    kafkaTemplate.send(topic, cmd.campaignId(), Envelope.adGroupEvent(event));
+                    log.info("Replay (new): emitted adgroup event: id={}, status={}", event.id(), event.status());
+                } else {
+                    log.debug("Replay: skipped adgroup command (no state to rebuild)");
+                }
             }
             default -> {} // skip events during replay
         }
