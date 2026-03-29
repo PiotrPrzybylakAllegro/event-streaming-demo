@@ -22,14 +22,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * the shared {@code ad-manager-events} topic are received here in partition
  * order and routed by {@link Envelope#type()}.
  *
+ * <p>The campaign-manager owns command processing: it consumes commands,
+ * validates them, updates internal {@link CampaignState}, and publishes
+ * the resulting events.  It never listens to events — they are its own
+ * output.</p>
+ *
  * <h3>Replay gate</h3>
  * On startup the consumer seeks to offset 0 (via
  * {@link StateRebuildRebalanceListener}) and replays the entire log.
- * During replay only events are processed (rebuilding {@link CampaignState});
- * commands are skipped because they were already processed in a previous
- * lifecycle.  Once the consumer catches up to the end offsets that existed
- * at partition-assignment time, the {@link ReplayGate} opens and commands
- * are processed normally from that point on.
+ * During replay, commands are re-validated to rebuild {@link CampaignState}
+ * but the resulting events are <em>not</em> published (they already exist
+ * on the topic from the original processing).  Events are skipped entirely.
+ * Once caught up, the {@link ReplayGate} opens and new commands are
+ * processed normally (with event publication).
  */
 @Service
 public class EnvelopeListener {
@@ -73,19 +78,17 @@ public class EnvelopeListener {
         Envelope envelope = record.value();
 
         if (!replayGate.isReady()) {
-            // Replay phase: only rebuild state from events, skip commands
-            processEvent(envelope);
+            // Replay phase: re-process commands to rebuild state, skip events
+            replayCommand(envelope);
             checkCaughtUp(record);
             return;
         }
 
-        // Normal phase: process everything
+        // Normal phase: handle commands (ignore events — they are our own output)
         switch (envelope.type()) {
-            case Envelope.CAMPAIGN_EVENT -> processEvent(envelope);
-            case Envelope.ADGROUP_EVENT  -> processEvent(envelope);
             case Envelope.CAMPAIGN_COMMAND -> handleCampaignCommand(envelope);
             case Envelope.ADGROUP_COMMAND  -> handleAdGroupCommand(envelope);
-            default -> log.warn("Unknown envelope type: {}", envelope.type());
+            default -> {} // ignore events and unknown types
         }
     }
 
@@ -106,28 +109,33 @@ public class EnvelopeListener {
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Event processing (state rebuild)                                    */
+    /*  Replay: rebuild state from commands without publishing events        */
     /* ------------------------------------------------------------------ */
 
-    private void processEvent(Envelope envelope) {
-        if (Envelope.CAMPAIGN_EVENT.equals(envelope.type())) {
-            CampaignEvent event = objectMapper.convertValue(envelope.payload(), CampaignEvent.class);
-            campaignState.upsert(event);
-            log.debug("Campaign state updated: id={}, status={}", event.id(), event.status());
-        }
-        // AdGroup events: no state to rebuild yet, but log for visibility
-        if (Envelope.ADGROUP_EVENT.equals(envelope.type())) {
-            log.debug("AdGroup event received (no state rebuild needed)");
+    private void replayCommand(Envelope envelope) {
+        switch (envelope.type()) {
+            case Envelope.CAMPAIGN_COMMAND -> {
+                CreateCampaignCommand cmd = objectMapper.convertValue(envelope.payload(), CreateCampaignCommand.class);
+                CampaignEvent event = validateCampaignCommand(cmd);
+                campaignState.upsert(event);
+                log.debug("Replay: rebuilt campaign state from command: id={}, status={}", event.id(), event.status());
+            }
+            case Envelope.ADGROUP_COMMAND -> {
+                // Ad group commands don't affect CampaignState, nothing to rebuild
+                log.debug("Replay: skipped adgroup command (no state to rebuild)");
+            }
+            default -> {} // skip events during replay
         }
     }
 
     /* ------------------------------------------------------------------ */
-    /*  Command handling                                                    */
+    /*  Normal command handling: validate, update state, publish event       */
     /* ------------------------------------------------------------------ */
 
     private void handleCampaignCommand(Envelope envelope) {
         CreateCampaignCommand command = objectMapper.convertValue(envelope.payload(), CreateCampaignCommand.class);
         CampaignEvent event = validateCampaignCommand(command);
+        campaignState.upsert(event);
         kafkaTemplate.send(topic, event.id(), Envelope.campaignEvent(event));
         log.info("Emitted campaign event: id={}, status={}, reason={}", event.id(), event.status(), event.reason());
     }
