@@ -4,6 +4,7 @@ import com.example.bff.model.CampaignEvent;
 import com.example.bff.model.CreateCampaignCommand;
 import com.example.bff.model.CreateAdGroupCommand;
 import com.example.bff.service.CampaignReadModel;
+import com.example.bff.service.CampaignReadModel.CampaignWithAdGroups;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +41,7 @@ public class CampaignController {
     }
 
     @GetMapping
-    public Collection<CampaignEvent> listCampaigns() {
+    public Collection<CampaignWithAdGroups> listCampaigns() {
         return readModel.list();
     }
 

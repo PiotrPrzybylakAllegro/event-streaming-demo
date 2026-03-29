@@ -15,6 +15,11 @@ public class AdGroupEventListener {
     private static final Logger log = LoggerFactory.getLogger(AdGroupEventListener.class);
 
     private final Map<String, AdGroupEvent> state = new ConcurrentHashMap<>();
+    private final CampaignReadModel readModel;
+
+    public AdGroupEventListener(CampaignReadModel readModel) {
+        this.readModel = readModel;
+    }
 
     @KafkaListener(topics = "${app.kafka.adgroup-event-topic}", containerFactory = "adGroupListenerContainerFactory")
     public void consume(AdGroupEvent event) {
@@ -22,6 +27,7 @@ public class AdGroupEventListener {
             return;
         }
         state.put(event.id(), event);
+        readModel.upsert(event);
         log.info("Adgroup event stored: id={}, status={}", event.id(), event.status());
     }
 
