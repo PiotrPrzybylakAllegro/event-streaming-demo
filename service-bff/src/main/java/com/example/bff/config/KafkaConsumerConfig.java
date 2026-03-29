@@ -1,7 +1,7 @@
 package com.example.bff.config;
 
-import com.example.bff.model.CampaignEvent;
 import com.example.bff.model.AdGroupEvent;
+import com.example.bff.model.CampaignEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -15,6 +15,7 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @EnableKafka
 @Configuration
@@ -23,7 +24,8 @@ public class KafkaConsumerConfig {
     @Value("${app.kafka.bootstrap-servers}")
     private String bootstrapServers;
 
-    private static final String GROUP_ID = "service-bff-campaign-events";
+    private final String campaignGroupId = "service-bff-campaign-events-" + UUID.randomUUID();
+    private final String adGroupGroupId = "service-bff-adgroup-events-" + UUID.randomUUID();
 
     @Bean
     public Map<String, Object> campaignConsumerConfigs() {
@@ -34,7 +36,7 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, CampaignEvent.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.bff.model,com.example.servicea.model");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, GROUP_ID);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, campaignGroupId);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return props;
     }
@@ -60,7 +62,7 @@ public class KafkaConsumerConfig {
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, AdGroupEvent.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.bff.model");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-bff-adgroup-events");
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, adGroupGroupId);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         return props;
     }
