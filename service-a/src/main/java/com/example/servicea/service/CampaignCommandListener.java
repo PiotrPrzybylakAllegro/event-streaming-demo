@@ -24,7 +24,7 @@ public class CampaignCommandListener {
         this.eventTopic = eventTopic;
     }
 
-    @KafkaListener(topics = "${app.kafka.campaign-topic}")
+    @KafkaListener(topics = "${app.kafka.campaign-topic}", containerFactory = "campaignListenerContainerFactory")
     public void consume(CreateCampaignCommand command) {
         CampaignEvent event = validateAndBuildEvent(command);
         kafkaTemplate.send(eventTopic, event.id(), event);

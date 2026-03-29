@@ -47,9 +47,6 @@ public class CampaignController {
     @PostMapping("/{campaignId}/adgroups")
     public void createAdGroup(@PathVariable("campaignId") String campaignId,
                               @RequestBody CreateAdGroupCommand command) {
-        if (!readModel.exists(campaignId)) {
-            throw new IllegalArgumentException("Campaign not found: " + campaignId);
-        }
         CreateAdGroupCommand enriched = new CreateAdGroupCommand(
                 command.id(),
                 campaignId,

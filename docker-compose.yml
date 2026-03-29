@@ -34,4 +34,9 @@ services:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_CLIENT_USER: user
       KAFKA_CLIENT_PASSWORD: password
-    command: ["/bin/bash", "-c", "sleep 10 && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic campaign-commands --replication-factor 1 --partitions 1 && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic demo-messages --replication-factor 1 --partitions 1 && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic campaign-events --replication-factor 1 --partitions 1"]
+    command: ["/bin/bash", "-c", "sleep 10 \
+      && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic campaign-commands --replication-factor 1 --partitions 1 \
+      && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic demo-messages --replication-factor 1 --partitions 1 \
+      && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic campaign-events --replication-factor 1 --partitions 1 \
+      && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic adgroup-commands --replication-factor 1 --partitions 1 \
+      && kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic adgroup-events --replication-factor 1 --partitions 1"]

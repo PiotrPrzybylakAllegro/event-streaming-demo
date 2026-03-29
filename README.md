@@ -38,14 +38,16 @@ Service A consumes the campaign command from Kafka topic `campaign-commands`.
 Service A validates it and emits a `campaign-events` record with APPROVED/REJECTED and reason.
 Service BFF consumes `campaign-events` into an in-memory read model and serves `GET /campaigns`.
 
-## Add an ad group via BFF (campaign must exist)
+## Add an ad group via BFF
 ```bash
 curl -X POST http://localhost:8080/campaigns/c1/adgroups \
   -H "Content-Type: application/json" \
   -d '{"id":"g1","campaignId":"c1","name":"adgroup","budget":200,"startDate":"2026-04-01","endDate":"2026-04-30"}'
 ```
-Command is sent to `adgroup-commands` only if the campaign exists in the read model.
-Note: Path variables now require the project to be built with `-parameters` (configured in parent pom).
+Flow:
+- BFF publishes to `adgroup-commands` (no local validation beyond path enrichment).
+- Service A consumes, checks campaign existence from `campaign-events` state, validates fields, and emits `adgroup-events` with APPROVED/REJECTED plus reason.
+- BFF also consumes `adgroup-events` (in-memory) and exposes `GET /adgroups` for inspection.
 
 
 podman run -d --name kafbat -p 8085:8080 \

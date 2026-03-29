@@ -1,6 +1,7 @@
 package com.example.bff.config;
 
 import com.example.bff.model.CampaignEvent;
+import com.example.bff.model.AdGroupEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,7 +26,7 @@ public class KafkaConsumerConfig {
     private static final String GROUP_ID = "service-bff-campaign-events";
 
     @Bean
-    public Map<String, Object> consumerConfigs() {
+    public Map<String, Object> campaignConsumerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
@@ -39,13 +40,38 @@ public class KafkaConsumerConfig {
 
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
-        return new DefaultKafkaConsumerFactory<>(consumerConfigs());
+        return new DefaultKafkaConsumerFactory<>(campaignConsumerConfigs());
     }
 
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Object> kafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
+        return factory;
+    }
+
+    @Bean
+    public Map<String, Object> adGroupConsumerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, AdGroupEvent.class);
+        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.example.bff.model");
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        props.put(ConsumerConfig.GROUP_ID_CONFIG, "service-bff-adgroup-events");
+        return props;
+    }
+
+    @Bean
+    public ConsumerFactory<String, Object> adGroupConsumerFactory() {
+        return new DefaultKafkaConsumerFactory<>(adGroupConsumerConfigs());
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Object> adGroupListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(adGroupConsumerFactory());
         return factory;
     }
 }

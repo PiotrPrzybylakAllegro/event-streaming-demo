@@ -7,6 +7,8 @@ app:
     topic: demo-messages
     campaign-topic: campaign-commands
     campaign-event-topic: campaign-events
+    adgroup-topic: adgroup-commands
+    adgroup-event-topic: adgroup-events
 
 spring:
   application:
