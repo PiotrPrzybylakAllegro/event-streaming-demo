@@ -22,4 +22,8 @@ public class CampaignReadModel {
     public Collection<CampaignEvent> list() {
         return state.values();
     }
+
+    public boolean exists(String campaignId) {
+        return campaignId != null && state.containsKey(campaignId);
+    }
 }

@@ -38,6 +38,14 @@ Service A consumes the campaign command from Kafka topic `campaign-commands`.
 Service A validates it and emits a `campaign-events` record with APPROVED/REJECTED and reason.
 Service BFF consumes `campaign-events` into an in-memory read model and serves `GET /campaigns`.
 
+## Add an ad group via BFF (campaign must exist)
+```bash
+curl -X POST http://localhost:8080/campaigns/c1/adgroups \
+  -H "Content-Type: application/json" \
+  -d '{"id":"g1","campaignId":"c1","name":"adgroup","budget":200,"startDate":"2026-04-01","endDate":"2026-04-30"}'
+```
+Command is sent to `adgroup-commands` only if the campaign exists in the read model.
+
 
 podman run -d --name kafbat -p 8085:8080 \
 -e KAFKA_CLUSTERS_0_NAME=local \

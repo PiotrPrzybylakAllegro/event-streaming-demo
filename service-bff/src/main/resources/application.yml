@@ -6,6 +6,7 @@ app:
     bootstrap-servers: localhost:29092
     topic: campaign-commands
     event-topic: campaign-events
+    adgroup-topic: adgroup-commands
 
 spring:
   application:
